@@ -37,15 +37,13 @@ body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:va
 .sectors::-webkit-scrollbar{display:none}
 .sec{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;white-space:nowrap;font-size:12px;cursor:pointer;transition:all .15s}
 .sec:hover,.sec.active{border-color:var(--blue-b);color:var(--blue-b)}
-.sec .p{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
 .layout{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 52px - 48px - 40px)}
 .left{background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .ph{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
 .setup-list{overflow-y:auto;flex:1;padding:10px;display:flex;flex-direction:column;gap:8px}
-.sc{background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.sc{background:var(--s2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative}
 .sc::before{content:'';position:absolute;top:0;right:0;width:3px;height:100%;border-radius:0 10px 10px 0}
 .sc.bull::before{background:var(--green-b)}.sc.bear::before{background:var(--red-b)}
-.sc:hover{border-color:var(--border2);transform:translateX(-2px)}
 .st{padding:12px 14px 8px;display:flex;align-items:flex-start;justify-content:space-between}
 .sticker{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.5px;line-height:1}
 .sname{font-size:11px;color:var(--muted);margin-top:2px}
@@ -97,6 +95,9 @@ tr.hl td{background:rgba(31,111,235,.04)}
 .statusbar{background:var(--s1);border-top:1px solid var(--border);padding:5px 18px;display:flex;align-items:center;gap:14px;font-size:11px;color:var(--muted)}
 .statusbar strong{color:var(--text);font-family:'JetBrains Mono',monospace}
 .mono{font-family:'JetBrains Mono',monospace}
+.no-data{text-align:center;padding:60px;color:var(--muted);font-size:14px}
+.no-data .icon{font-size:40px;margin-bottom:12px}
+.webhook-url{background:var(--s3);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue-b);margin-top:8px;word-break:break-all}
 @media(max-width:800px){.layout{grid-template-columns:1fr;height:auto}.left{max-height:380px}}
 </style>
 </head>
@@ -104,9 +105,10 @@ tr.hl td{background:rgba(31,111,235,.04)}
 
 <div class="topbar">
   <div class="logo"><div class="live-dot"></div>SCANNER</div>
-  <div class="pill"><span class="neu">SPY</span><span class="v up" id="spy">+0.43%</span></div>
-  <div class="pill"><span class="neu">QQQ</span><span class="v up" id="qqq">+0.71%</span></div>
-  <div class="pill"><span class="neu">VIX</span><span class="v down" id="vix">18.4</span></div>
+  <div class="pill"><span class="neu">SPY</span><span class="v" id="spy">—</span></div>
+  <div class="pill"><span class="neu">QQQ</span><span class="v" id="qqq">—</span></div>
+  <div class="pill"><span class="neu">VIX</span><span class="v" id="vix">—</span></div>
+  <div style="font-size:11px;color:var(--gold-b);background:var(--gold-bg);border:1px solid rgba(210,153,34,.3);border-radius:4px;padding:3px 8px;" id="dataStatus">جاري الاتصال...</div>
   <div class="clock" id="clk"></div>
 </div>
 
@@ -119,7 +121,7 @@ tr.hl td{background:rgba(31,111,235,.04)}
   <div class="bar-wrap">
     <span class="mono" style="font-size:11px;color:var(--green-b)" id="bpct">—</span>
     <div class="bar-track">
-      <div class="bar-bull" id="barBull" style="width:0%;right:auto;left:28%"></div>
+      <div class="bar-bull" id="barBull" style="width:0%"></div>
       <div class="bar-bear" id="barBear" style="width:0%"></div>
     </div>
     <span class="mono" style="font-size:11px;color:var(--red-b)" id="rpct">—</span>
@@ -143,7 +145,7 @@ tr.hl td{background:rgba(31,111,235,.04)}
 <div class="layout">
   <div class="left">
     <div class="ph"><span>🎯 أفضل Setups</span><span style="font-size:11px;color:var(--muted);font-family:'IBM Plex Sans Arabic'">Top 5</span></div>
-    <div class="setup-list" id="setupList"></div>
+    <div class="setup-list" id="setupList"><div class="no-data"><div class="icon">📡</div>في انتظار بيانات TradingView</div></div>
   </div>
   <div class="right">
     <div class="filters">
@@ -154,98 +156,118 @@ tr.hl td{background:rgba(31,111,235,.04)}
       <button class="fb" onclick="setF('strong',this)">💪 Score +70</button>
       <input class="srch" id="srch" placeholder="ابحث..." oninput="render()">
     </div>
-    <div class="tw"><table><thead><tr>
-      <th onclick="srt('r')">#</th>
-      <th onclick="srt('sym')">السهم</th>
-      <th onclick="srt('ad')">↑ فوق اليومي</th>
-      <th onclick="srt('aw')">↑ فوق الأسبوعي</th>
-      <th onclick="srt('db')">Daily</th>
-      <th onclick="srt('hb')">H1</th>
-      <th onclick="srt('sc')">Score</th>
-      <th>Signal</th>
-    </tr></thead><tbody id="tb"></tbody></table></div>
+    <div class="tw" id="tableWrap">
+      <div class="no-data">
+        <div class="icon">📡</div>
+        <div>في انتظار بيانات من TradingView</div>
+        <div style="margin-top:12px;font-size:12px;">Webhook URL:</div>
+        <div class="webhook-url" id="webhookUrl"></div>
+      </div>
+    </div>
     <div class="statusbar">
-      <span>إجمالي: <strong id="tot">—</strong></span>
-      <span>معروض: <strong id="shown">—</strong></span>
+      <span>إجمالي: <strong id="tot">0</strong></span>
+      <span>معروض: <strong id="shown">0</strong></span>
       <span style="margin-right:auto">آخر تحديث: <strong id="upd">—</strong></span>
     </div>
   </div>
 </div>
 
 <script>
-const TICKERS=[
-  ['AAPL','Apple','XLK'],['MSFT','Microsoft','XLK'],['NVDA','NVIDIA','XLK'],['AMZN','Amazon','XLY'],
-  ['META','Meta','XLC'],['GOOGL','Alphabet','XLC'],['TSLA','Tesla','XLY'],['AVGO','Broadcom','XLK'],
-  ['JPM','JPMorgan','XLF'],['V','Visa','XLF'],['MA','Mastercard','XLF'],['UNH','UnitedHealth','XLV'],
-  ['XOM','ExxonMobil','XLE'],['LLY','Eli Lilly','XLV'],['JNJ','J&J','XLV'],['PG','P&G','XLY'],
-  ['HD','Home Depot','XLY'],['COST','Costco','XLY'],['ABBV','AbbVie','XLV'],['MRK','Merck','XLV'],
-  ['CVX','Chevron','XLE'],['KO','Coca-Cola','XLY'],['PEP','PepsiCo','XLY'],['BAC','BofA','XLF'],
-  ['TMO','Thermo Fisher','XLV'],['CSCO','Cisco','XLK'],['ACN','Accenture','XLK'],['MCD','McDonald\'s','XLY'],
-  ['NKE','Nike','XLY'],['CRM','Salesforce','XLK'],['AMD','AMD','XLK'],['NFLX','Netflix','XLC'],
-  ['TXN','Texas Instr','XLK'],['INTC','Intel','XLK'],['QCOM','Qualcomm','XLK'],['INTU','Intuit','XLK'],
-  ['AMGN','Amgen','XLV'],['GS','Goldman','XLF'],['MS','Morgan Stanley','XLF'],['BLK','BlackRock','XLF'],
-  ['SPGI','S&P Global','XLF'],['AXP','Amex','XLF'],['SYK','Stryker','XLV'],['MDT','Medtronic','XLV'],
-  ['LMT','Lockheed','XLI'],['RTX','Raytheon','XLI'],['HON','Honeywell','XLI'],['CAT','Caterpillar','XLI'],
-  ['DE','Deere','XLI'],['UPS','UPS','XLI'],['FDX','FedEx','XLI'],['BA','Boeing','XLI'],
-  ['GE','GE','XLI'],['NEE','NextEra','XLU'],['DUK','Duke Energy','XLU'],['SO','Southern','XLU'],
-  ['WMT','Walmart','XLY'],['TGT','Target','XLY'],['NOW','ServiceNow','XLK'],['SNOW','Snowflake','XLK'],
-  ['PANW','Palo Alto','XLK'],['CRWD','CrowdStrike','XLK'],['FTNT','Fortinet','XLK'],['UBER','Uber','XLI'],
-  ['ABNB','Airbnb','XLY'],['COIN','Coinbase','XLF'],['PYPL','PayPal','XLF'],['PLTR','Palantir','XLK'],
-  ['DDOG','Datadog','XLK'],['MU','Micron','XLK'],['AMAT','Applied Matls','XLK'],['LRCX','Lam Research','XLK'],
-  ['PLD','Prologis','XLRE'],['AMT','Amer Tower','XLRE'],['EQIX','Equinix','XLRE'],['O','Realty Income','XLRE'],
-  ['WFC','Wells Fargo','XLF'],['C','Citigroup','XLF'],['USB','US Bancorp','XLF'],['PNC','PNC','XLF'],
-  ['SBUX','Starbucks','XLY'],['DHR','Danaher','XLV'],['BMY','Bristol-Myers','XLV'],['GILD','Gilead','XLV'],
-  ['ISRG','Intuitive Surg','XLV'],['VRTX','Vertex','XLV'],['MMM','3M','XLI'],['EMR','Emerson','XLI'],
-  ['APD','Air Products','XLB'],['LIN','Linde','XLB'],['SHW','Sherwin-Williams','XLB'],['FCX','Freeport','XLB'],
-  ['ECL','Ecolab','XLB'],['NEM','Newmont','XLB'],['ADBE','Adobe','XLK'],['ORCL','Oracle','XLK'],
-  ['IBM','IBM','XLK'],['HPQ','HP','XLK'],['DELL','Dell','XLK'],['ZS','Zscaler','XLK'],
-];
+// Webhook URL
+const WEBHOOK_URL = window.location.origin + '/api/webhook';
+document.getElementById('webhookUrl').textContent = WEBHOOK_URL;
 
-function r(a,b){return Math.floor(Math.random()*(b-a+1))+a}
-function pick(a){return a[Math.floor(Math.random()*a.length)]}
+let stocks = [];
+let filt = 'all', sec = 'all', sort = {k:'sc', d:-1};
 
-let stocks = TICKERS.map(([sym,name,sec])=>{
-  const db=pick(['bull','bull','bull','bear','bear','neu']);
-  const hb=pick(['bull','bull','bear','bear','neu']);
-  const ad=r(0,14), aw=r(0,20);
-  let sc=0;
-  if(db==='bull')sc+=30; if(hb==='bull')sc+=20;
-  sc+=Math.min(ad,10)*2; sc+=Math.min(aw,10)*1.5;
-  sc=Math.max(0,Math.min(100,Math.floor(sc+r(-5,5))));
-  let sig='none';
-  if(db==='bull'&&hb==='bull'&&ad>=6)sig='call';
-  else if(db==='bear'&&hb==='bear'&&ad<=4)sig='put';
-  else if((db==='bull'&&hb==='bear')||(db==='bear'&&hb==='bull'))sig='watch';
-  return{sym,name,sec,db,hb,ad,aw,sc,sig,chg:+(Math.random()*6-3).toFixed(2)};
-});
+// ─── FETCH DATA ────────────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const res = await fetch('/api/webhook');
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      stocks = data.map(s => ({
+        sym: s.symbol,
+        name: s.name || s.symbol,
+        sec: s.sector || 'Unknown',
+        db: s.daily_bias || 'neu',
+        hb: s.h1_bias || 'neu',
+        ad: parseInt(s.above_day) || 0,
+        aw: parseInt(s.above_week) || 0,
+        bd: parseInt(s.below_day) || 0,
+        bw: parseInt(s.below_week) || 0,
+        sc: calcScore(s),
+        sig: calcSignal(s),
+        chg: parseFloat(s.change) || 0,
+        updatedAt: s.updatedAt
+      }));
+      updateUI();
+    }
+  } catch(e) {
+    console.log('Waiting for data...');
+  }
+}
 
-let filt='all', sec='all', sort={k:'sc',d:-1};
+function calcScore(s) {
+  let sc = 0;
+  if(s.daily_bias === 'bull') sc += 30;
+  if(s.h1_bias === 'bull') sc += 20;
+  sc += Math.min(parseInt(s.above_day)||0, 10) * 2;
+  sc += Math.min(parseInt(s.above_week)||0, 10) * 1.5;
+  return Math.max(0, Math.min(100, Math.floor(sc)));
+}
 
-function updateStrength(){
-  const bull=stocks.filter(s=>s.db==='bull').length;
-  const bear=stocks.filter(s=>s.db==='bear').length;
-  const neu=stocks.length-bull-bear;
-  const bp=Math.round(bull/stocks.length*100);
-  const rp=Math.round(bear/stocks.length*100);
-  document.getElementById('bull').textContent=bull;
-  document.getElementById('bear').textContent=bear;
-  document.getElementById('neu').textContent=neu;
-  document.getElementById('bpct').textContent='🟢 '+bp+'%';
-  document.getElementById('rpct').textContent='🔴 '+rp+'%';
-  document.getElementById('barBull').style.width=bp+'%';
-  document.getElementById('barBear').style.width=rp+'%';
-  const lbl=document.getElementById('biasLabel');
+function calcSignal(s) {
+  const ad = parseInt(s.above_day) || 0;
+  if(s.daily_bias==='bull' && s.h1_bias==='bull' && ad>=6) return 'call';
+  if(s.daily_bias==='bear' && s.h1_bias==='bear' && ad<=4) return 'put';
+  if((s.daily_bias==='bull'&&s.h1_bias==='bear')||(s.daily_bias==='bear'&&s.h1_bias==='bull')) return 'watch';
+  return 'none';
+}
+
+function updateUI() {
+  const status = document.getElementById('dataStatus');
+  status.textContent = '🟢 بيانات حقيقية';
+  status.style.color = 'var(--green-b)';
+  status.style.background = 'var(--green-bg)';
+  status.style.borderColor = 'rgba(63,185,80,.3)';
+
+  const bull = stocks.filter(s=>s.db==='bull').length;
+  const bear = stocks.filter(s=>s.db==='bear').length;
+  const neu = stocks.length - bull - bear;
+  const bp = stocks.length ? Math.round(bull/stocks.length*100) : 0;
+  const rp = stocks.length ? Math.round(bear/stocks.length*100) : 0;
+
+  document.getElementById('bull').textContent = bull;
+  document.getElementById('bear').textContent = bear;
+  document.getElementById('neu').textContent = neu;
+  document.getElementById('bpct').textContent = '🟢 ' + bp + '%';
+  document.getElementById('rpct').textContent = '🔴 ' + rp + '%';
+  document.getElementById('barBull').style.width = bp + '%';
+  document.getElementById('barBear').style.width = rp + '%';
+
+  const lbl = document.getElementById('biasLabel');
   if(bp>=60){lbl.textContent='BULL';lbl.style.color='var(--green-b)'}
   else if(rp>=60){lbl.textContent='BEAR';lbl.style.color='var(--red-b)'}
   else{lbl.textContent='NEUTRAL';lbl.style.color='var(--muted)'}
+
+  document.getElementById('tot').textContent = stocks.length;
+  document.getElementById('upd').textContent = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+
+  renderSetups();
+  render();
 }
 
-function renderSetups(){
-  const top=stocks.filter(s=>s.sig==='call'||s.sig==='put').sort((a,b)=>b.sc-a.sc).slice(0,5);
-  document.getElementById('setupList').innerHTML=top.map((s,i)=>{
-    const bull=s.sig==='call';
-    const sc=s.sc>=80?'var(--green-b)':s.sc>=60?'var(--gold-b)':'var(--muted)';
-    return`<div class="sc ${bull?'bull':'bear'}">
+function renderSetups() {
+  const top = [...stocks].filter(s=>s.sig==='call'||s.sig==='put').sort((a,b)=>b.sc-a.sc).slice(0,5);
+  if(!top.length) {
+    document.getElementById('setupList').innerHTML = '<div class="no-data"><div class="icon">📡</div>في انتظار بيانات TradingView</div>';
+    return;
+  }
+  document.getElementById('setupList').innerHTML = top.map((s,i) => {
+    const bull = s.sig==='call';
+    const sc = s.sc>=80?'var(--green-b)':s.sc>=60?'var(--gold-b)':'var(--muted)';
+    return `<div class="sc ${bull?'bull':'bear'}">
       <div class="rank">#${i+1}</div>
       <div class="st">
         <div><div class="sticker">${s.sym}</div><div class="sname">${s.name}</div></div>
@@ -265,31 +287,46 @@ function renderSetups(){
   }).join('');
 }
 
-function render(){
-  const q=document.getElementById('srch').value.toLowerCase();
-  let list=stocks.filter(s=>{
-    if(sec!=='all'&&s.sec!==sec)return false;
-    if(q&&!s.sym.toLowerCase().includes(q)&&!s.name.toLowerCase().includes(q))return false;
-    if(filt==='call')return s.sig==='call';
-    if(filt==='put')return s.sig==='put';
-    if(filt==='watch')return s.sig==='watch';
-    if(filt==='strong')return s.sc>=70;
+function render() {
+  const q = document.getElementById('srch').value.toLowerCase();
+  let list = stocks.filter(s => {
+    if(sec!=='all' && s.sec!==sec) return false;
+    if(q && !s.sym.toLowerCase().includes(q) && !s.name.toLowerCase().includes(q)) return false;
+    if(filt==='call') return s.sig==='call';
+    if(filt==='put') return s.sig==='put';
+    if(filt==='watch') return s.sig==='watch';
+    if(filt==='strong') return s.sc>=70;
     return true;
   });
-  list.sort((a,b)=>{
-    const k=sort.k;
-    const av=k==='sym'?a.sym:k==='ad'?a.ad:k==='aw'?a.aw:k==='sc'?a.sc:0;
-    const bv=k==='sym'?b.sym:k==='ad'?b.ad:k==='aw'?b.aw:k==='sc'?b.sc:0;
-    if(typeof av==='string')return sort.d*av.localeCompare(bv);
+  list.sort((a,b) => {
+    const k = sort.k;
+    const av = k==='sym'?a.sym:k==='ad'?a.ad:k==='aw'?a.aw:k==='sc'?a.sc:0;
+    const bv = k==='sym'?b.sym:k==='ad'?b.ad:k==='aw'?b.aw:k==='sc'?b.sc:0;
+    if(typeof av==='string') return sort.d*av.localeCompare(bv);
     return sort.d*(bv-av);
   });
-  document.getElementById('shown').textContent=list.length;
-  document.getElementById('tb').innerHTML=list.map((s,i)=>{
-    const sc=s.sc>=80?'var(--green-b)':s.sc>=60?'var(--gold-b)':s.sc>=40?'var(--muted)':'var(--red-b)';
-    const bars=Array.from({length:Math.min(s.ad,12)},(_,j)=>`<div class="bar" style="height:${6+j*2}px;background:var(--green-b);opacity:${0.35+j*0.055}"></div>`).join('');
-    const sigC=s.sig==='call'?'sig-call':s.sig==='put'?'sig-put':s.sig==='watch'?'sig-watch':'sig-none';
-    const sigT=s.sig==='call'?'CALL 🟢':s.sig==='put'?'PUT 🔴':s.sig==='watch'?'Watch 👀':'—';
-    return`<tr class="${i<3&&s.sig!=='none'?'hl':''}">
+  document.getElementById('shown').textContent = list.length;
+
+  if(!list.length) {
+    document.getElementById('tableWrap').innerHTML = `<div class="no-data"><div class="icon">📡</div><div>في انتظار بيانات من TradingView</div><div style="margin-top:12px;font-size:12px;">Webhook URL:</div><div class="webhook-url">${WEBHOOK_URL}</div></div>`;
+    return;
+  }
+
+  document.getElementById('tableWrap').innerHTML = `<table><thead><tr>
+    <th onclick="srt('r')">#</th>
+    <th onclick="srt('sym')">السهم</th>
+    <th onclick="srt('ad')">↑ فوق اليومي</th>
+    <th onclick="srt('aw')">↑ فوق الأسبوعي</th>
+    <th onclick="srt('db')">Daily</th>
+    <th onclick="srt('hb')">H1</th>
+    <th onclick="srt('sc')">Score</th>
+    <th>Signal</th>
+  </tr></thead><tbody>${list.map((s,i) => {
+    const sc = s.sc>=80?'var(--green-b)':s.sc>=60?'var(--gold-b)':s.sc>=40?'var(--muted)':'var(--red-b)';
+    const bars = Array.from({length:Math.min(s.ad,12)},(_,j)=>`<div class="bar" style="height:${6+j*2}px;background:var(--green-b);opacity:${0.35+j*0.055}"></div>`).join('');
+    const sigC = s.sig==='call'?'sig-call':s.sig==='put'?'sig-put':s.sig==='watch'?'sig-watch':'sig-none';
+    const sigT = s.sig==='call'?'CALL 🟢':s.sig==='put'?'PUT 🔴':s.sig==='watch'?'Watch 👀':'—';
+    return `<tr class="${i<3&&s.sig!=='none'?'hl':''}">
       <td><span class="mono" style="color:var(--dim)">${i+1}</span></td>
       <td><div class="tsym">${s.sym}</div><div class="tname">${s.name}</div></td>
       <td><div class="bars">${bars}</div><div class="mono" style="font-size:11px;color:var(--green-b);margin-top:2px">${s.ad} شمعة</div></td>
@@ -299,33 +336,18 @@ function render(){
       <td><div class="sc-cell"><div class="sc-num" style="color:${sc}">${s.sc}</div><div class="sc-bar" style="width:${s.sc*.55}px;background:${sc}"></div></div></td>
       <td><span class="sig ${sigC}">${sigT}</span></td>
     </tr>`;
-  }).join('');
+  }).join('')}</tbody></table>`;
 }
 
 function setF(f,btn){filt=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
 function setSec(s,el){sec=s;document.querySelectorAll('.sec').forEach(e=>e.classList.remove('active'));el.classList.add('active');render()}
 function srt(k){if(sort.k===k)sort.d*=-1;else{sort.k=k;sort.d=-1;}render()}
 
-function tick(){
-  stocks.forEach(s=>{
-    if(Math.random()<0.12){
-      s.ad=Math.max(0,s.ad+(Math.random()<0.55?1:-1));
-      s.aw=Math.max(0,s.aw+(Math.random()<0.5?1:-1));
-      s.sc=Math.max(0,Math.min(100,s.sc+r(-2,2)));
-      if(s.db==='bull'&&s.hb==='bull'&&s.ad>=6)s.sig='call';
-      else if(s.db==='bear'&&s.hb==='bear'&&s.ad<=4)s.sig='put';
-    }
-  });
-  const now=new Date();
-  document.getElementById('upd').textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
-  updateStrength();renderSetups();render();
-}
-
 setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})},1000);
-setInterval(tick,4000);
 
-document.getElementById('tot').textContent=stocks.length;
-tick();
+// Fetch every 30 seconds
+fetchData();
+setInterval(fetchData, 30000);
 </script>
 </body>
 </html>
